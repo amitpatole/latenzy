@@ -8,7 +8,7 @@ Claude, OpenAI, and Gemini models.
 from latenzy.config import Config, ExporterConfig, ProbeConfig, ProviderConfig, load_config
 from latenzy.probe import Outcome, ProbeResult
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 __all__ = [
     "Config",

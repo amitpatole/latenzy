@@ -81,8 +81,9 @@ Grafana serves the comparison dashboard read-only at `http://localhost:3000`
 
 ## Status
 
-Phase 2 (prober + exporter + Grafana dashboard + recording/alert rules + standalone
-bundle). Coming next: security hardening pass, first PyPI release, and passive
+v0.1.0 — first real release: prober + exporter, Grafana dashboard (library ID
+25642), recording/alert rules, standalone bundle, security-hardened through a
+four-round red-team loop (see [`SECURITY.md`](SECURITY.md)). Coming next: passive
 OpenTelemetry middleware for real-traffic latency.
 
 License: AGPL-3.0-only. Dual licensing available for enterprises — contact the author.

@@ -6,7 +6,7 @@ authors:
   - family-names: Patole
     given-names: Amit
     email: amit.patole@gmail.com
-version: 0.0.1
+version: 0.1.0
 date-released: 2026-08-04
 repository-code: "https://github.com/amitpatole/latenzy"
 license: AGPL-3.0-only
