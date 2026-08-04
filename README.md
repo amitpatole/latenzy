@@ -3,6 +3,9 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21796983.svg)](https://doi.org/10.5281/zenodo.21796983)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/License-AGPL--3.0--only-blue.svg)](LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/latenzy.svg)](https://pypi.org/project/latenzy/)
+[![Docs](https://img.shields.io/badge/docs-latenzy-4d7ea6.svg)](https://amitpatole.github.io/latenzy/)
+
+**Documentation: [amitpatole.github.io/latenzy](https://amitpatole.github.io/latenzy/)**
 
 Per-model LLM latency monitoring for enterprises. latenzy is a synthetic prober and
 Prometheus exporter that measures what the lab-level status pages can't: the latency

@@ -27,6 +27,8 @@ latenzy = "latenzy.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/amitpatole/latenzy"
+Documentation = "https://amitpatole.github.io/latenzy/"
+Changelog = "https://github.com/amitpatole/latenzy/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
