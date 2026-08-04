@@ -4,9 +4,11 @@ latenzy metrics, and the bundle must never ship a default secret."""
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 import yaml
@@ -16,6 +18,16 @@ from latenzy.config import load_config
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARDS = sorted((ROOT / "dashboards").glob("*.json"))
 METRIC_RE = re.compile(r"\blatenzy[_:]")
+
+
+def _share_module() -> ModuleType:
+    spec = importlib.util.spec_from_file_location(
+        "share_dashboard", ROOT / "scripts" / "share_dashboard.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _targets(dashboard: dict[str, Any]) -> list[dict[str, Any]]:
@@ -77,6 +89,27 @@ def test_dashboards_only_use_defined_recording_rules() -> None:
         for target in _targets(dashboard):
             for used in re.findall(r"latenzy:[a-z0-9_:]+", target["expr"]):
                 assert used in defined, (path.name, used)
+
+
+def test_share_dashboards_in_sync_with_provisioned() -> None:
+    # grafana.com uploads use the generated "export for sharing externally"
+    # form in dashboards-share/; regenerate with scripts/share_dashboard.py.
+    share = _share_module()
+    for path in DASHBOARDS:
+        committed = (ROOT / "dashboards-share" / path.name).read_text(encoding="utf-8")
+        rendered = share.render(json.loads(path.read_text(encoding="utf-8")))
+        assert committed == rendered, f"{path.name}: stale share copy, regenerate"
+
+
+def test_share_dashboards_are_share_format() -> None:
+    for path in sorted((ROOT / "dashboards-share").glob("*.json")):
+        raw = path.read_text(encoding="utf-8")
+        dashboard = json.loads(raw)
+        assert dashboard["id"] is None, path.name
+        assert dashboard["__inputs"][0]["name"] == "DS_PROMETHEUS", path.name
+        assert {r["type"] for r in dashboard["__requires"]} >= {"grafana", "datasource"}
+        assert "${datasource}" not in raw, path.name
+        assert "datasource" not in [v["name"] for v in dashboard["templating"]["list"]]
 
 
 def test_compose_bundle_fails_closed() -> None:
