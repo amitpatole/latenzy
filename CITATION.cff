@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use latenzy, please cite it using this metadata."
+title: "latenzy: per-model LLM latency monitoring"
+type: software
+authors:
+  - family-names: Patole
+    given-names: Amit
+    email: amit.patole@gmail.com
+version: 0.0.1
+date-released: 2026-08-04
+repository-code: "https://github.com/amitpatole/latenzy"
+license: AGPL-3.0-only
+abstract: >-
+  A synthetic prober and Prometheus exporter with prebuilt Grafana dashboards
+  that measures per-model LLM latency (time-to-first-token, total latency,
+  streaming throughput, rate-limit pressure) across Claude, OpenAI, and Gemini
+  models, at model-ID granularity rather than lab-level rollups.
+# doi: added at the first real release via Zenodo (concept DOI)
