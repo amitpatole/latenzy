@@ -42,7 +42,9 @@ API keys are read from environment variables only — they have no place in conf
 
 ## Grafana + Prometheus
 
-- **Dashboard** — [`dashboards/latenzy-model-comparison.json`](dashboards/latenzy-model-comparison.json):
+- **Dashboard** — Grafana dashboard library ID
+  [**25642**](https://grafana.com/grafana/dashboards/25642/) (Dashboards → Import →
+  `25642`), or import [`dashboards/latenzy-model-comparison.json`](dashboards/latenzy-model-comparison.json):
   the model-comparison view (TTFT p95, total-latency p95, tokens/sec, failure and 429
   ratio, staleness) filterable by provider, model, endpoint, and prompt class. Import
   it into any Grafana; it prompts for your Prometheus datasource. The

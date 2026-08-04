@@ -5,10 +5,17 @@ from __future__ import annotations
 
 import enum
 import os
+import re
 from pathlib import Path
+from urllib.parse import urlparse
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+# Model ids land in URL paths and Prometheus labels; endpoint is a label.
+# Restricting the charset keeps hostile config values out of both sinks.
+_MODEL_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")
+_ENDPOINT_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
 
 
 class ConfigError(ValueError):
@@ -51,10 +58,36 @@ class ProviderConfig(BaseModel):
 
     @field_validator("models")
     @classmethod
-    def _no_blank_models(cls, v: list[str]) -> list[str]:
-        if any(not m.strip() for m in v):
-            raise ValueError("model ids must be non-empty")
+    def _valid_model_ids(cls, v: list[str]) -> list[str]:
+        for model in v:
+            if not _MODEL_ID_RE.fullmatch(model):
+                raise ValueError(
+                    f"invalid model id {model!r}: allowed characters are "
+                    "letters, digits, and . _ : - (max 128)"
+                )
         return v
+
+    @field_validator("endpoint")
+    @classmethod
+    def _valid_endpoint(cls, v: str) -> str:
+        if not _ENDPOINT_RE.fullmatch(v):
+            raise ValueError(
+                f"invalid endpoint label {v!r}: allowed characters are "
+                "letters, digits, and . _ - (max 64)"
+            )
+        return v
+
+    @field_validator("base_url")
+    @classmethod
+    def _valid_base_url(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        parsed = urlparse(v)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValueError(f"base_url must be an http(s) URL with a host, got {v!r}")
+        if parsed.query or parsed.fragment:
+            raise ValueError("base_url must not contain a query string or fragment")
+        return v.rstrip("/")
 
     @property
     def resolved_base_url(self) -> str:

@@ -13,11 +13,14 @@ import ipaddress
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import Any
 
 from prometheus_client.exposition import CONTENT_TYPE_LATEST, generate_latest
 from prometheus_client.registry import CollectorRegistry
 
 from latenzy.config import ConfigError, ExporterConfig
+
+MAX_CONCURRENT_CONNECTIONS = 32
 
 
 def _is_loopback(host: str) -> bool:
@@ -44,6 +47,31 @@ def resolve_auth_token(config: ExporterConfig) -> str | None:
             "set exporter.auth_token_env"
         )
     return token
+
+
+class BoundedThreadingHTTPServer(ThreadingHTTPServer):
+    """ThreadingHTTPServer spawns one thread per connection with no ceiling;
+    a connection flood (or slowloris holding the header-read timeout) would
+    grow threads without bound. Refuse connections beyond a fixed cap."""
+
+    daemon_threads = True
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._admission_lock = threading.Lock()
+        self._admitted: set[int] = set()
+
+    def verify_request(self, request: Any, client_address: Any) -> bool:
+        with self._admission_lock:
+            if len(self._admitted) >= MAX_CONCURRENT_CONNECTIONS:
+                return False
+            self._admitted.add(id(request))
+        return True
+
+    def shutdown_request(self, request: Any) -> None:
+        super().shutdown_request(request)
+        with self._admission_lock:
+            self._admitted.discard(id(request))
 
 
 class MetricsServer:
@@ -81,8 +109,7 @@ class MetricsServer:
             def log_message(self, format: str, *args: object) -> None:
                 pass  # request paths/headers stay out of logs
 
-        self._server = ThreadingHTTPServer((config.host, config.port), Handler)
-        self._server.daemon_threads = True
+        self._server = BoundedThreadingHTTPServer((config.host, config.port), Handler)
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
 
     @property
