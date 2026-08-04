@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "latenzy"
+version = "0.0.0"
+description = "Per-model LLM latency monitoring — Prometheus exporter and Grafana dashboards for Claude, OpenAI, and Gemini. Name reservation placeholder; first real release coming soon."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{ name = "Amit Patole", email = "amit.patole@gmail.com" }]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+Homepage = "https://github.com/amitpatole/latenzy"
