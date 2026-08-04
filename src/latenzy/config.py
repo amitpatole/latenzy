@@ -16,6 +16,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # Restricting the charset keeps hostile config values out of both sinks.
 _MODEL_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")
 _ENDPOINT_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+# POSIX env-var name; also keeps control/ANSI chars out of doctor output.
+_ENV_NAME_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,127}")
+# Hostname or IP literal; excludes whitespace/control/ANSI in exporter output.
+_HOST_RE = re.compile(r"[A-Za-z0-9_.:\[\]-]{1,255}")
 
 
 class ConfigError(ValueError):
@@ -77,6 +81,13 @@ class ProviderConfig(BaseModel):
             )
         return v
 
+    @field_validator("api_key_env")
+    @classmethod
+    def _valid_api_key_env(cls, v: str | None) -> str | None:
+        if v is not None and not _ENV_NAME_RE.fullmatch(v):
+            raise ValueError(f"invalid api_key_env {v!r}: must be a POSIX env-var name")
+        return v
+
     @field_validator("base_url")
     @classmethod
     def _valid_base_url(cls, v: str | None) -> str | None:
@@ -124,6 +135,20 @@ class ExporterConfig(BaseModel):
     host: str = "127.0.0.1"
     port: int = Field(default=9877, ge=0, le=65535)
     auth_token_env: str | None = None
+
+    @field_validator("host")
+    @classmethod
+    def _valid_host(cls, v: str) -> str:
+        if not _HOST_RE.fullmatch(v):
+            raise ValueError(f"invalid host {v!r}: must be a hostname or IP literal")
+        return v
+
+    @field_validator("auth_token_env")
+    @classmethod
+    def _valid_auth_token_env(cls, v: str | None) -> str | None:
+        if v is not None and not _ENV_NAME_RE.fullmatch(v):
+            raise ValueError(f"invalid auth_token_env {v!r}: must be a POSIX env-var name")
+        return v
 
 
 class Config(BaseModel):

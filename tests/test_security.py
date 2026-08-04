@@ -116,6 +116,29 @@ _ABSURD_TOKEN_STREAMS = {
 }
 
 
+async def test_bracket_heavy_token_text_is_not_falsely_dropped(api_keys: None) -> None:
+    # Round 3: an honest delta whose TEXT contains many brackets must not trip
+    # the depth limiter (brackets inside string literals are not structure).
+    text = "[" * 100 + "{" * 100
+    delta = f'data: {{"type": "content_block_delta", "delta": {{"text": "{text}"}}}}'.encode()
+    usage = b'data: {"type": "message_delta", "usage": {"output_tokens": 5}}'
+    body = delta + b"\n\n" + usage + b"\n\n"
+    probe = make_probe(ProviderKind.anthropic, _body_transport(body))
+    result = await probe.probe("some-model", "small", "p", 16, 5.0)
+    assert result.outcome is Outcome.ok  # token was seen, not dropped
+    assert result.output_tokens == 5
+
+
+async def test_closers_hidden_in_strings_cannot_smuggle_deep_nesting(api_keys: None) -> None:
+    # Round 3 bypass: hide "]" in a string then nest deeply for real. The
+    # string-aware scanner must still count the real depth and reject (or, at
+    # worst, the RecursionError safety net degrades it to error — never a crash).
+    payload = b'data: {"x":"' + b"]" * 100 + b'","y":' + b"[" * 5000 + b"]" * 5000 + b"}\n\n"
+    probe = make_probe(ProviderKind.openai, _body_transport(payload))
+    result = await probe.probe("some-model", "small", "p", 16, 5.0)
+    assert result.outcome in set(Outcome)  # never raises
+
+
 @pytest.mark.parametrize("kind", list(ProviderKind))
 async def test_absurd_token_count_does_not_crash_or_poison(
     kind: ProviderKind, api_keys: None
@@ -203,6 +226,26 @@ def test_hostile_endpoint_labels_rejected(endpoint: str) -> None:
 def test_hostile_base_urls_rejected(url: str) -> None:
     with pytest.raises(ValueError):
         ProviderConfig(provider=ProviderKind.openai, models=["m"], base_url=url)
+
+
+@pytest.mark.parametrize("env", ["BAD-NAME", "has space", "x\x1b[31m", "1STARTSDIGIT", "a\nb"])
+def test_hostile_env_var_names_rejected(env: str) -> None:
+    with pytest.raises(ValueError):
+        ProviderConfig(provider=ProviderKind.openai, models=["m"], api_key_env=env)
+    with pytest.raises(ValueError):
+        ExporterConfig(auth_token_env=env)
+
+
+@pytest.mark.parametrize("host", ["has space", "h\x1b[2Jx", "a\nb", "x" * 300])
+def test_hostile_host_values_rejected(host: str) -> None:
+    with pytest.raises(ValueError):
+        ExporterConfig(host=host)
+
+
+def test_real_env_names_and_hosts_accepted() -> None:
+    ProviderConfig(provider=ProviderKind.openai, models=["m"], api_key_env="MY_KEY_1")
+    ExporterConfig(host="0.0.0.0", auth_token_env="LATENZY_TOKEN")
+    ExporterConfig(host="metrics.internal.corp")
 
 
 def test_base_url_trailing_slash_normalized() -> None:

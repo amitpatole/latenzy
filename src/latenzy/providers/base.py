@@ -45,24 +45,42 @@ def sane_token_count(value: object) -> int | None:
     return value
 
 
-def _depth_limited(raw: str) -> Any:
-    """json.loads with a bounded nesting depth (RecursionError-safe)."""
+def _max_structural_depth(raw: str) -> int:
+    """Maximum bracket nesting depth, ignoring brackets inside string literals.
 
-    def hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-        return dict(pairs)
-
-    decoder = json.JSONDecoder(object_pairs_hook=hook)
-    # Cheap structural depth check before decoding — bounds recursion without
-    # a custom parser.
+    Counting brackets over the whole raw string is wrong both ways: honest text
+    like "[[[" inside a delta inflates the count (false reject), and closers
+    hidden in a string can drive the count negative to smuggle real deep nesting
+    past the gate. Skipping string literals (with escape handling) fixes both.
+    """
     depth = 0
+    max_depth = 0
+    in_string = False
+    escaped = False
     for ch in raw:
-        if ch in "[{":
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+        elif ch in "[{":
             depth += 1
-            if depth > MAX_JSON_DEPTH:
-                raise ValueError("json nesting too deep")
+            max_depth = max(max_depth, depth)
         elif ch in "]}":
             depth -= 1
-    return decoder.decode(raw)
+    return max_depth
+
+
+def _depth_limited(raw: str) -> Any:
+    """json.loads with a bounded nesting depth (RecursionError-safe)."""
+    if _max_structural_depth(raw) > MAX_JSON_DEPTH:
+        raise ValueError("json nesting too deep")
+    return json.loads(raw)
 
 
 async def _iter_sse_lines(response: httpx.Response) -> AsyncIterator[str]:
