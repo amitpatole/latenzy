@@ -8,8 +8,16 @@ authors:
     email: amit.patole@gmail.com
 version: 0.1.0
 date-released: 2026-08-04
+doi: 10.5281/zenodo.21796983
 repository-code: "https://github.com/amitpatole/latenzy"
 license: AGPL-3.0-only
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.21796983
+    description: Concept DOI (always resolves to the latest version)
+  - type: doi
+    value: 10.5281/zenodo.21796984
+    description: Version DOI for 0.1.0
 abstract: >-
   A synthetic prober and Prometheus exporter with prebuilt Grafana dashboards
   that measures per-model LLM latency (time-to-first-token, total latency,
