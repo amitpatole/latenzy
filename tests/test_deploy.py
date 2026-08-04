@@ -48,6 +48,8 @@ def test_dashboards_are_valid_and_importable() -> None:
         # (compose bundle) and imported from the Grafana dashboard library.
         variables = {v["name"]: v for v in dashboard["templating"]["list"]}
         assert variables["datasource"]["type"] == "datasource", path.name
+        # source filter (synthetic vs live) must be selectable.
+        assert "source" in variables, path.name
         for panel in dashboard["panels"]:
             assert panel["datasource"]["uid"] == "${datasource}", (path.name, panel["title"])
 

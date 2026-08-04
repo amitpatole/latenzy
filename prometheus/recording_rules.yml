@@ -7,43 +7,43 @@ groups:
     interval: 1m
     rules:
       - record: latenzy:ttft_seconds:p50_1h
-        expr: histogram_quantile(0.50, sum by (le, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[1h])))
+        expr: histogram_quantile(0.50, sum by (le, source, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[1h])))
       - record: latenzy:ttft_seconds:p95_1h
-        expr: histogram_quantile(0.95, sum by (le, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[1h])))
+        expr: histogram_quantile(0.95, sum by (le, source, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[1h])))
       - record: latenzy:ttft_seconds:p99_1h
-        expr: histogram_quantile(0.99, sum by (le, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[1h])))
+        expr: histogram_quantile(0.99, sum by (le, source, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[1h])))
       - record: latenzy:request_duration_seconds:p50_1h
-        expr: histogram_quantile(0.50, sum by (le, provider, model, endpoint, prompt_class) (rate(latenzy_request_duration_seconds_bucket[1h])))
+        expr: histogram_quantile(0.50, sum by (le, source, provider, model, endpoint, prompt_class) (rate(latenzy_request_duration_seconds_bucket[1h])))
       - record: latenzy:request_duration_seconds:p95_1h
-        expr: histogram_quantile(0.95, sum by (le, provider, model, endpoint, prompt_class) (rate(latenzy_request_duration_seconds_bucket[1h])))
+        expr: histogram_quantile(0.95, sum by (le, source, provider, model, endpoint, prompt_class) (rate(latenzy_request_duration_seconds_bucket[1h])))
       - record: latenzy:tokens_per_second:p50_1h
-        expr: histogram_quantile(0.50, sum by (le, provider, model, endpoint, prompt_class) (rate(latenzy_output_tokens_per_second_bucket[1h])))
+        expr: histogram_quantile(0.50, sum by (le, source, provider, model, endpoint, prompt_class) (rate(latenzy_output_tokens_per_second_bucket[1h])))
       - record: latenzy:probe_failure_ratio:1h
         expr: >-
-          sum by (provider, model, endpoint, prompt_class) (rate(latenzy_probes_total{outcome!="ok"}[1h]))
+          sum by (source, provider, model, endpoint, prompt_class) (rate(latenzy_probes_total{outcome!="ok"}[1h]))
           /
-          sum by (provider, model, endpoint, prompt_class) (rate(latenzy_probes_total[1h]))
+          sum by (source, provider, model, endpoint, prompt_class) (rate(latenzy_probes_total[1h]))
       - record: latenzy:rate_limited_ratio:1h
         expr: >-
-          sum by (provider, model, endpoint, prompt_class) (rate(latenzy_probes_total{outcome="rate_limited"}[1h]))
+          sum by (source, provider, model, endpoint, prompt_class) (rate(latenzy_probes_total{outcome="rate_limited"}[1h]))
           /
-          sum by (provider, model, endpoint, prompt_class) (rate(latenzy_probes_total[1h]))
+          sum by (source, provider, model, endpoint, prompt_class) (rate(latenzy_probes_total[1h]))
 
   - name: latenzy-daily
     interval: 5m
     rules:
       - record: latenzy:ttft_seconds:p50_24h
-        expr: histogram_quantile(0.50, sum by (le, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[24h])))
+        expr: histogram_quantile(0.50, sum by (le, source, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[24h])))
       - record: latenzy:ttft_seconds:p95_24h
-        expr: histogram_quantile(0.95, sum by (le, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[24h])))
+        expr: histogram_quantile(0.95, sum by (le, source, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[24h])))
       - record: latenzy:ttft_seconds:p99_24h
-        expr: histogram_quantile(0.99, sum by (le, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[24h])))
+        expr: histogram_quantile(0.99, sum by (le, source, provider, model, endpoint, prompt_class) (rate(latenzy_ttft_seconds_bucket[24h])))
       - record: latenzy:request_duration_seconds:p95_24h
-        expr: histogram_quantile(0.95, sum by (le, provider, model, endpoint, prompt_class) (rate(latenzy_request_duration_seconds_bucket[24h])))
+        expr: histogram_quantile(0.95, sum by (le, source, provider, model, endpoint, prompt_class) (rate(latenzy_request_duration_seconds_bucket[24h])))
       - record: latenzy:tokens_per_second:p50_24h
-        expr: histogram_quantile(0.50, sum by (le, provider, model, endpoint, prompt_class) (rate(latenzy_output_tokens_per_second_bucket[24h])))
+        expr: histogram_quantile(0.50, sum by (le, source, provider, model, endpoint, prompt_class) (rate(latenzy_output_tokens_per_second_bucket[24h])))
       - record: latenzy:probe_failure_ratio:24h
         expr: >-
-          sum by (provider, model, endpoint, prompt_class) (rate(latenzy_probes_total{outcome!="ok"}[24h]))
+          sum by (source, provider, model, endpoint, prompt_class) (rate(latenzy_probes_total{outcome!="ok"}[24h]))
           /
-          sum by (provider, model, endpoint, prompt_class) (rate(latenzy_probes_total[24h]))
+          sum by (source, provider, model, endpoint, prompt_class) (rate(latenzy_probes_total[24h]))

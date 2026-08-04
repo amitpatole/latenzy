@@ -45,6 +45,7 @@ async def test_run_once_probes_every_model_and_records(
             registry.get_sample_value(
                 "latenzy_probes_total",
                 {
+                    "source": "synthetic",
                     "provider": provider,
                     "model": model,
                     "endpoint": "direct",

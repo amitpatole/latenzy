@@ -10,7 +10,12 @@ from prometheus_client.registry import REGISTRY, CollectorRegistry
 
 from latenzy.probe import Outcome, ProbeResult
 
-LABELS = ("provider", "model", "endpoint", "prompt_class")
+# `source` distinguishes the prober's canaries ("synthetic") from real
+# application traffic ("live"); both share these metric names and histograms.
+LABELS = ("source", "provider", "model", "endpoint", "prompt_class")
+
+SYNTHETIC = "synthetic"
+LIVE = "live"
 
 TTFT_BUCKETS = (0.05, 0.1, 0.2, 0.35, 0.5, 0.75, 1.0, 1.5, 2.5, 4.0, 6.0, 10.0, 20.0, 30.0)
 DURATION_BUCKETS = (0.1, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 15.0, 30.0, 60.0, 120.0)
@@ -55,8 +60,8 @@ class Metrics:
             registry=reg,
         )
 
-    def record(self, result: ProbeResult) -> None:
-        labels = (result.provider, result.model, result.endpoint, result.prompt_class)
+    def record(self, result: ProbeResult, source: str = SYNTHETIC) -> None:
+        labels = (source, result.provider, result.model, result.endpoint, result.prompt_class)
         self.probes.labels(*labels, result.outcome.value).inc()
         if result.outcome is not Outcome.ok:
             return

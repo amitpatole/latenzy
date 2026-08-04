@@ -20,6 +20,21 @@ _ENDPOINT_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
 _ENV_NAME_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,127}")
 # Hostname or IP literal; excludes whitespace/control/ANSI in exporter output.
 _HOST_RE = re.compile(r"[A-Za-z0-9_.:\[\]-]{1,255}")
+# Provider label shares the endpoint charset (short lowercase identifier).
+_PROVIDER_RE = _ENDPOINT_RE
+
+
+def ensure_metric_label(value: str, kind: str) -> str:
+    """Validate a value used as a Prometheus label (model/endpoint/provider).
+
+    The live-traffic API accepts these from a host application, so bounding the
+    charset here keeps attacker/user-derived values from exploding metric
+    cardinality or injecting control chars — the same guarantee config gives.
+    """
+    pattern = {"model": _MODEL_ID_RE, "endpoint": _ENDPOINT_RE, "provider": _PROVIDER_RE}[kind]
+    if not isinstance(value, str) or not pattern.fullmatch(value):
+        raise ValueError(f"invalid {kind} label {value!r}")
+    return value
 
 
 class ConfigError(ValueError):

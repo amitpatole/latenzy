@@ -22,6 +22,7 @@ def result(outcome: Outcome = Outcome.ok, **kw: object) -> ProbeResult:
 
 
 LABELS = {
+    "source": "synthetic",
     "provider": "anthropic",
     "model": "claude-sonnet-4-6",
     "endpoint": "direct",

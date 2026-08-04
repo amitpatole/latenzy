@@ -26,9 +26,50 @@ Every probe cycle, for each configured `(provider, model, endpoint, prompt_class
 | `latenzy_probes_total{outcome=...}` | probe count by `ok` / `rate_limited` / `timeout` / `error` |
 | `latenzy_last_success_timestamp_seconds` | staleness signal for alerting |
 
+All metrics are labelled `source`, `provider`, `model`, `endpoint`, `prompt_class`.
+
 Histograms are observed only for successful probes, so failures never skew latency
 percentiles. Prompts are deterministic per `prompt_class` (small/medium/large) —
 comparing models on unequal inputs is meaningless.
+
+Every metric carries a `source` label: `synthetic` for the prober's canaries and
+`live` for real application traffic (see below). One dashboard shows both.
+
+## Live traffic (passive instrumentation)
+
+The prober answers "is this model slow right now"; to also chart your *own* traffic's
+p95, wrap real LLM calls with the framework-agnostic `LiveRecorder`. It emits the same
+metric names under `source="live"`, so the same dashboards work — no separate pipeline.
+
+```python
+from latenzy import LiveRecorder, Metrics, classify_prompt, measure_stream
+
+recorder = LiveRecorder(Metrics())  # shares your app's Prometheus registry
+
+with recorder.observe(
+    provider="openai", model="gpt-4o", prompt_class=classify_prompt(text=prompt)
+) as obs:
+    for chunk in measure_stream(client.stream(prompt), obs):  # marks first-token timing
+        handle(chunk)
+    obs.output_tokens = n_tokens
+```
+
+Label values are charset-validated (they may come from user input), so a host app can't
+explode metric cardinality. A raised exception is recorded as an `error` outcome and
+re-raised. A runnable, key-free walkthrough is in
+[`examples/demo_live.py`](examples/demo_live.py):
+
+```console
+$ python examples/demo_live.py
+recorded live call: model=gpt-4o prompt_class=small tokens=4
+recorded live call: model=gpt-4o prompt_class=large tokens=9
+
+--- /metrics (live source) ---
+latenzy_ttft_seconds_count{...,prompt_class="small",...,source="live"} 1.0
+latenzy_ttft_seconds_sum{...,prompt_class="small",...,source="live"} 0.0553...
+latenzy_ttft_seconds_sum{...,prompt_class="large",...,source="live"} 0.3202...
+latenzy_probes_total{...,outcome="ok",prompt_class="small",...,source="live"} 1.0
+```
 
 ## Quick start
 
@@ -87,8 +128,9 @@ Grafana serves the comparison dashboard read-only at `http://localhost:3000`
 
 v0.1.0 — first real release: prober + exporter, Grafana dashboard (library ID
 25642), recording/alert rules, standalone bundle, security-hardened through a
-four-round red-team loop (see [`SECURITY.md`](SECURITY.md)). Coming next: passive
-OpenTelemetry middleware for real-traffic latency.
+four-round red-team loop (see [`SECURITY.md`](SECURITY.md)). Now also: passive
+live-traffic instrumentation (`LiveRecorder`, `source="live"`). Coming next: a
+direct OpenTelemetry meter bridge and a docs site.
 
 License: AGPL-3.0-only. Dual licensing available for enterprises — contact the author.
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Passive live-traffic instrumentation: `LiveRecorder` / `LiveObservation` /
+  `classify_prompt` / `measure_stream` record real application LLM-call latency
+  into the same metric names under a new `source="live"` label (prober traffic
+  is `source="synthetic"`). Label values are charset-validated and token counts
+  bounded, matching the prober's hardening. Recording rules, the Grafana
+  dashboard (new `source` filter), and `examples/demo_live.py` updated in
+  lockstep. Metric semantics follow the OpenTelemetry GenAI conventions.
+
 ## 0.1.0 — 2026-08-04
 
 First real release.

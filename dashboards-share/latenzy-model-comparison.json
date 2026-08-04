@@ -84,7 +84,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "latenzy:ttft_seconds:p95_1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "expr": "latenzy:ttft_seconds:p95_1h{source=~\"$source\", provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
           "legendFormat": "{{model}} · {{endpoint}} · {{prompt_class}}"
         }
       ],
@@ -127,7 +127,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "latenzy:request_duration_seconds:p95_1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "expr": "latenzy:request_duration_seconds:p95_1h{source=~\"$source\", provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
           "legendFormat": "{{model}} · {{endpoint}} · {{prompt_class}}"
         }
       ],
@@ -170,7 +170,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "latenzy:tokens_per_second:p50_1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "expr": "latenzy:tokens_per_second:p50_1h{source=~\"$source\", provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
           "legendFormat": "{{model}} · {{endpoint}} · {{prompt_class}}"
         }
       ],
@@ -213,12 +213,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "latenzy:probe_failure_ratio:1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "expr": "latenzy:probe_failure_ratio:1h{source=~\"$source\", provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
           "legendFormat": "failures · {{model}} · {{endpoint}}"
         },
         {
           "refId": "B",
-          "expr": "latenzy:rate_limited_ratio:1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "expr": "latenzy:rate_limited_ratio:1h{source=~\"$source\", provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
           "legendFormat": "429s · {{model}} · {{endpoint}}"
         }
       ],
@@ -260,7 +260,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sort_desc(latenzy:ttft_seconds:p95_1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"})",
+          "expr": "sort_desc(latenzy:ttft_seconds:p95_1h{source=~\"$source\", provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"})",
           "instant": true,
           "format": "table"
         }
@@ -318,7 +318,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "time() - latenzy_last_success_timestamp_seconds{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "expr": "time() - latenzy_last_success_timestamp_seconds{source=~\"$source\", provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
           "legendFormat": "{{model}} · {{endpoint}} · {{prompt_class}}"
         }
       ],
@@ -347,6 +347,28 @@
   ],
   "templating": {
     "list": [
+      {
+        "name": "source",
+        "label": "Source",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "query": "label_values(latenzy_probes_total, source)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      },
       {
         "name": "provider",
         "label": "Provider",
