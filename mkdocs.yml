@@ -1,0 +1,81 @@
+site_name: latenzy
+site_description: >-
+  Per-model LLM latency monitoring — a synthetic prober and Prometheus exporter with
+  prebuilt Grafana dashboards for Claude, OpenAI, and Gemini. Model A vs model B, not
+  lab-level rollups.
+site_url: https://amitpatole.github.io/latenzy/
+repo_url: https://github.com/amitpatole/latenzy
+repo_name: amitpatole/latenzy
+copyright: AGPL-3.0-only © Amit Patole
+docs_dir: docs
+
+# Defense-in-depth: the local-only security residuals ledger lives under docs/
+# and is gitignored (never reaches CI). Exclude it so even a local build can
+# never emit it into the published site.
+exclude_docs: |
+  SECURITY_RESIDUALS.md
+
+
+theme:
+  name: material
+  palette:
+    scheme: default          # Warm Paper — light, editorial
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - navigation.instant
+    - content.code.copy
+    - toc.follow
+    - search.suggest
+    - search.highlight
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: false
+            heading_level: 3
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+            filters: ["!^_"]
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Configuration: configuration.md
+  - CLI: cli.md
+  - Live traffic: live-traffic.md
+  - Dashboards & alerts: dashboards.md
+  - Standalone bundle: standalone.md
+  - API reference: api.md
+  - Security: security.md
+  - Changelog: changelog.md
