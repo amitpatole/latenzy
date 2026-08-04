@@ -1,0 +1,33 @@
+# latenzy example configuration.
+# API keys are read from environment variables only — never put keys in this file.
+
+providers:
+  - provider: anthropic          # key from ANTHROPIC_API_KEY (override: api_key_env)
+    endpoint: direct             # label distinguishing the path (direct / bedrock / vertex / gateway)
+    models:
+      - claude-sonnet-4-6
+      - claude-haiku-4-5-20251001
+  - provider: openai             # key from OPENAI_API_KEY
+    endpoint: direct
+    models:
+      - gpt-4o
+      - gpt-4o-mini
+  - provider: gemini             # key from GEMINI_API_KEY
+    endpoint: direct
+    models:
+      - gemini-2.0-flash
+
+probe:
+  interval_seconds: 300          # one probe cycle every 5 minutes
+  timeout_seconds: 60
+  max_output_tokens: 16          # keep probe cost negligible
+  prompt_classes: [small]        # add medium/large to compare latency vs input size
+  concurrency: 4
+
+exporter:
+  host: 127.0.0.1                # loopback needs no auth
+  port: 9877
+  # To bind a routable interface you MUST set an auth token (the server refuses
+  # to start otherwise). Prometheus then scrapes with the same bearer token:
+  # host: 0.0.0.0
+  # auth_token_env: LATENZY_TOKEN
