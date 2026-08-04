@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from latenzy.providers.base import ProviderProbe, RequestSpec, StreamEvent
+from latenzy.providers.base import ProviderProbe, RequestSpec, StreamEvent, sane_token_count
 
 
 class AnthropicProbe(ProviderProbe):
@@ -28,8 +28,9 @@ class AnthropicProbe(ProviderProbe):
         if kind == "content_block_delta":
             return StreamEvent(has_token=True)
         if kind == "message_delta":
-            usage = data.get("usage") or {}
-            tokens = usage.get("output_tokens")
-            if isinstance(tokens, int):
-                return StreamEvent(output_tokens=tokens)
+            usage = data.get("usage")
+            if isinstance(usage, dict):
+                tokens = sane_token_count(usage.get("output_tokens"))
+                if tokens is not None:
+                    return StreamEvent(output_tokens=tokens)
         return StreamEvent()

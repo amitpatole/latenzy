@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from latenzy.providers.base import ProviderProbe, RequestSpec, StreamEvent
+from latenzy.providers.base import ProviderProbe, RequestSpec, StreamEvent, sane_token_count
 
 
 class OpenAIProbe(ProviderProbe):
@@ -23,14 +23,13 @@ class OpenAIProbe(ProviderProbe):
 
     def parse_data(self, data: dict[str, Any]) -> StreamEvent:
         has_token = False
-        choices = data.get("choices") or []
-        if choices:
-            delta = choices[0].get("delta") or {}
-            if delta.get("content"):
+        choices = data.get("choices")
+        if isinstance(choices, list) and choices and isinstance(choices[0], dict):
+            delta = choices[0].get("delta")
+            if isinstance(delta, dict) and delta.get("content"):
                 has_token = True
-        usage = data.get("usage") or {}
-        tokens = usage.get("completion_tokens")
-        return StreamEvent(
-            has_token=has_token,
-            output_tokens=tokens if isinstance(tokens, int) else None,
+        usage = data.get("usage")
+        tokens = (
+            sane_token_count(usage.get("completion_tokens")) if isinstance(usage, dict) else None
         )
+        return StreamEvent(has_token=has_token, output_tokens=tokens)

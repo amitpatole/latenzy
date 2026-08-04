@@ -135,6 +135,21 @@ def test_bundle_prober_config_requires_auth() -> None:
     assert config.exporter.auth_token_env == "LATENZY_TOKEN"
 
 
+def test_dockerignore_excludes_secrets_from_build_context() -> None:
+    # Build context is the repo root; without these excludes COPY . would bake
+    # deploy/secrets/latenzy_token (and any local .env) into an image layer.
+    ignore = (ROOT / ".dockerignore").read_text(encoding="utf-8")
+    for needed in ("deploy/secrets/", "secrets/", ".env", ".venv/", ".git/"):
+        assert needed in ignore, f".dockerignore missing {needed!r}"
+
+
+def test_bundle_images_pinned_by_digest() -> None:
+    compose = yaml.safe_load((ROOT / "deploy" / "docker-compose.yml").read_text())
+    for service in ("prometheus", "grafana"):
+        image = compose["services"][service]["image"]
+        assert "@sha256:" in image, f"{service} image not digest-pinned: {image}"
+
+
 def test_bundle_mounts_repo_dashboards_and_rules() -> None:
     compose = yaml.safe_load((ROOT / "deploy" / "docker-compose.yml").read_text())
     grafana_mounts = compose["services"]["grafana"]["volumes"]

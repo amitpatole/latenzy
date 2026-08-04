@@ -59,8 +59,14 @@ class Prober:
     async def run_forever(self, stop: asyncio.Event | None = None) -> None:
         stop = stop or asyncio.Event()
         while not stop.is_set():
-            results = await self.run_once()
-            ok = sum(1 for r in results if r.outcome.value == "ok")
-            logger.info("probe cycle complete: %d/%d ok", ok, len(results))
+            try:
+                results = await self.run_once()
+            except Exception:
+                # A single cycle must never kill the long-running monitor;
+                # log and carry on to the next interval.
+                logger.exception("probe cycle failed; continuing")
+            else:
+                ok = sum(1 for r in results if r.outcome.value == "ok")
+                logger.info("probe cycle complete: %d/%d ok", ok, len(results))
             with contextlib.suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=self._config.probe.interval_seconds)

@@ -42,6 +42,21 @@ def test_unknown_path_404(server: MetricsServer) -> None:
     assert httpx.get(f"http://127.0.0.1:{server.port}/nope").status_code == 404
 
 
+def test_connection_closes_after_each_request(server: MetricsServer) -> None:
+    # HTTP/1.0 + forced close: a client cannot hold a keep-alive slot open and
+    # lock out the connection cap. The server must not advertise keep-alive.
+    with httpx.Client(http1=True) as client:
+        resp = client.get(f"http://127.0.0.1:{server.port}/metrics")
+    assert resp.status_code == 200
+    assert resp.headers.get("connection", "close").lower() != "keep-alive"
+
+
+def test_many_sequential_requests_do_not_exhaust_slots(server: MetricsServer) -> None:
+    # If slots leaked per request, the 33rd+ would be refused. Each closes.
+    for _ in range(40):
+        assert httpx.get(f"http://127.0.0.1:{server.port}/metrics").status_code == 200
+
+
 def test_non_loopback_without_token_refuses_to_start(registry: CollectorRegistry) -> None:
     with pytest.raises(ConfigError, match="refusing to bind non-loopback"):
         MetricsServer(ExporterConfig(host="0.0.0.0", port=0), registry)

@@ -73,6 +73,12 @@ class BoundedThreadingHTTPServer(ThreadingHTTPServer):
         with self._admission_lock:
             self._admitted.discard(id(request))
 
+    def handle_error(self, request: Any, client_address: Any) -> None:
+        # Base implementation prints a full traceback + client address to
+        # stderr on any request error — a client can spam it on demand
+        # (log flood / disk fill) and it leaks server internals. Swallow it.
+        pass
+
 
 class MetricsServer:
     def __init__(self, config: ExporterConfig, registry: CollectorRegistry) -> None:
@@ -83,7 +89,14 @@ class MetricsServer:
             server_version = "latenzy"
             sys_version = ""
             timeout = 10
-            protocol_version = "HTTP/1.1"
+            # HTTP/1.0 => no keep-alive: each connection serves one request and
+            # closes, so a client can't hold an admission slot open. With
+            # keep-alive, 32 trickling clients could lock out the cap forever.
+            protocol_version = "HTTP/1.0"
+
+            def handle_one_request(self) -> None:
+                super().handle_one_request()
+                self.close_connection = True
 
             def do_GET(self) -> None:
                 if token is not None and not self._authorized():

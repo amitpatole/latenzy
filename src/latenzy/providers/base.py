@@ -21,10 +21,48 @@ from latenzy.probe import Outcome, ProbeResult
 # any honest response and bound what a hostile endpoint can make us buffer.
 MAX_LINE_BYTES = 512 * 1024
 MAX_STREAM_BYTES = 8 * 1024 * 1024
+# json.loads recurses on nested structures and raises RecursionError (not a
+# JSONDecodeError) on deep input; cap depth so a hostile payload can't. Honest
+# SSE deltas are shallow (a handful of levels).
+MAX_JSON_DEPTH = 32
+# Reported token counts above this are treated as absent — a hostile endpoint
+# could otherwise send an integer so large the tokens/sec division overflows
+# float, or a merely-huge one that poisons the throughput histogram sum.
+MAX_REPORTED_TOKENS = 10_000_000
 
 
 class StreamLimitExceeded(Exception):
     pass
+
+
+def sane_token_count(value: object) -> int | None:
+    """Accept a provider-reported output-token count only if it is a plausible
+    non-negative integer; reject bools, wrong types, and absurd magnitudes."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    if value < 0 or value > MAX_REPORTED_TOKENS:
+        return None
+    return value
+
+
+def _depth_limited(raw: str) -> Any:
+    """json.loads with a bounded nesting depth (RecursionError-safe)."""
+
+    def hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        return dict(pairs)
+
+    decoder = json.JSONDecoder(object_pairs_hook=hook)
+    # Cheap structural depth check before decoding — bounds recursion without
+    # a custom parser.
+    depth = 0
+    for ch in raw:
+        if ch in "[{":
+            depth += 1
+            if depth > MAX_JSON_DEPTH:
+                raise ValueError("json nesting too deep")
+        elif ch in "]}":
+            depth -= 1
+    return decoder.decode(raw)
 
 
 async def _iter_sse_lines(response: httpx.Response) -> AsyncIterator[str]:
@@ -124,8 +162,12 @@ class ProviderProbe(ABC):
                     if not payload or payload == "[DONE]":
                         continue
                     try:
-                        data = json.loads(payload)
-                    except json.JSONDecodeError:
+                        data = _depth_limited(payload)
+                    except (json.JSONDecodeError, ValueError, RecursionError):
+                        continue
+                    # Every response byte here is attacker-controlled; a
+                    # non-dict payload would crash parse_data's .get() calls.
+                    if not isinstance(data, dict):
                         continue
                     event = self.parse_data(data)
                     if event.has_token and ttft is None:
@@ -146,6 +188,11 @@ class ProviderProbe(ABC):
         except StreamLimitExceeded:
             return result(Outcome.error)
         except httpx.HTTPError:
+            return result(Outcome.error)
+        except Exception:
+            # Fail closed: no malformed byte from a provider endpoint may crash
+            # a probe (and, via run_forever, the whole monitor). Defense in
+            # depth behind the type guards above.
             return result(Outcome.error)
         duration = time.perf_counter() - start
         if ttft is None:
