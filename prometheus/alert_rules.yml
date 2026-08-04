@@ -1,0 +1,51 @@
+# latenzy alert rules. Thresholds are deliberately conservative defaults —
+# tune ttft/failure thresholds to your own SLOs.
+
+groups:
+  - name: latenzy-alerts
+    rules:
+      - alert: LatenzyProbesStale
+        expr: time() - latenzy_last_success_timestamp_seconds > 1800
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "latenzy probes stale for {{ $labels.provider }}/{{ $labels.model }}"
+          description: >-
+            No successful probe for {{ $labels.provider }}/{{ $labels.model }}
+            ({{ $labels.endpoint }}, {{ $labels.prompt_class }}) in over 30 minutes.
+            The model may be down, the key invalid, or the prober stopped.
+
+      - alert: LatenzyTTFTHigh
+        expr: latenzy:ttft_seconds:p95_1h > 5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TTFT p95 above 5s for {{ $labels.provider }}/{{ $labels.model }}"
+          description: >-
+            Hourly p95 time-to-first-token for {{ $labels.provider }}/{{ $labels.model }}
+            ({{ $labels.endpoint }}, {{ $labels.prompt_class }}) is
+            {{ $value | printf "%.2f" }}s.
+
+      - alert: LatenzyRateLimitPressure
+        expr: latenzy:rate_limited_ratio:1h > 0.2
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "429 pressure on {{ $labels.provider }}/{{ $labels.model }}"
+          description: >-
+            More than 20% of probes to {{ $labels.provider }}/{{ $labels.model }}
+            were rate-limited over the last hour.
+
+      - alert: LatenzyProbeFailureRatioHigh
+        expr: latenzy:probe_failure_ratio:1h > 0.5
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "majority of probes failing for {{ $labels.provider }}/{{ $labels.model }}"
+          description: >-
+            Over half of probes to {{ $labels.provider }}/{{ $labels.model }}
+            ({{ $labels.endpoint }}) failed in the last hour.

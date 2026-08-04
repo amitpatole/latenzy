@@ -1,0 +1,208 @@
+{
+  "uid": "latenzy-compare",
+  "title": "latenzy · model latency comparison",
+  "description": "Per-model LLM latency (TTFT, total, throughput, rate-limit pressure) for Claude, OpenAI, and Gemini models, measured by the latenzy synthetic prober. Compare model A vs model B, and the same model over different endpoints (direct / Bedrock / Vertex).",
+  "tags": ["latenzy", "llm", "latency", "prometheus"],
+  "schemaVersion": 39,
+  "editable": true,
+  "graphTooltip": 1,
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "browser",
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "label": "Prometheus",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0
+      },
+      {
+        "name": "provider",
+        "label": "Provider",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(latenzy_probes_total, provider)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+      },
+      {
+        "name": "model",
+        "label": "Model",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(latenzy_probes_total{provider=~\"$provider\"}, model)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+      },
+      {
+        "name": "endpoint",
+        "label": "Endpoint",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(latenzy_probes_total{provider=~\"$provider\"}, endpoint)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+      },
+      {
+        "name": "prompt_class",
+        "label": "Prompt class",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(latenzy_probes_total, prompt_class)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Time to first token · p95 (1h window)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "latenzy:ttft_seconds:p95_1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "legendFormat": "{{model}} · {{endpoint}} · {{prompt_class}}"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Total request latency · p95 (1h window)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "latenzy:request_duration_seconds:p95_1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "legendFormat": "{{model}} · {{endpoint}} · {{prompt_class}}"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Streaming throughput · p50 tokens/sec (1h window)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 9 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "latenzy:tokens_per_second:p50_1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "legendFormat": "{{model}} · {{endpoint}} · {{prompt_class}}"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Failure and rate-limit ratio (1h window)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 9 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "latenzy:probe_failure_ratio:1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "legendFormat": "failures · {{model}} · {{endpoint}}"
+        },
+        {
+          "refId": "B",
+          "expr": "latenzy:rate_limited_ratio:1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "legendFormat": "429s · {{model}} · {{endpoint}}"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Model ranking · TTFT p95 over the last hour",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sort_desc(latenzy:ttft_seconds:p95_1h{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"})",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true },
+            "renameByName": { "Value": "TTFT p95 (s)" }
+          }
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Probe staleness · seconds since last success",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1800 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - latenzy_last_success_timestamp_seconds{provider=~\"$provider\", model=~\"$model\", endpoint=~\"$endpoint\", prompt_class=~\"$prompt_class\"}",
+          "legendFormat": "{{model}} · {{endpoint}} · {{prompt_class}}"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    }
+  ]
+}

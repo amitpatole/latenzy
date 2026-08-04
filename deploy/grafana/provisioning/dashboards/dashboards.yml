@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: latenzy
+    folder: latenzy
+    type: file
+    disableDeletion: true
+    options:
+      # Mounted from the repo's dashboards/ directory — the same JSON that is
+      # published to the Grafana dashboard library, so the two cannot drift.
+      path: /var/lib/grafana/dashboards

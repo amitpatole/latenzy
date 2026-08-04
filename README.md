@@ -40,6 +40,32 @@ latenzy run    -c latenzy.yaml   # probe on an interval + serve /metrics
 See [`latenzy.example.yaml`](latenzy.example.yaml) for the full configuration.
 API keys are read from environment variables only — they have no place in config files.
 
+## Grafana + Prometheus
+
+- **Dashboard** — [`dashboards/latenzy-model-comparison.json`](dashboards/latenzy-model-comparison.json):
+  the model-comparison view (TTFT p95, total-latency p95, tokens/sec, failure and 429
+  ratio, staleness) filterable by provider, model, endpoint, and prompt class. Import
+  it into any Grafana; it prompts for your Prometheus datasource.
+- **Recording rules** — [`prometheus/recording_rules.yml`](prometheus/recording_rules.yml):
+  hourly and daily p50/p95/p99 series (`latenzy:ttft_seconds:p95_1h`, ...), so
+  dashboards and alerts never recompute histogram quantiles.
+- **Alert rules** — [`prometheus/alert_rules.yml`](prometheus/alert_rules.yml):
+  probe staleness, TTFT SLO breach, rate-limit pressure, failure ratio.
+
+## Standalone bundle (no existing Grafana needed)
+
+```bash
+cd deploy
+mkdir -p secrets && openssl rand -hex 32 > secrets/latenzy_token
+export ANTHROPIC_API_KEY=... OPENAI_API_KEY=... GEMINI_API_KEY=...
+export GRAFANA_ADMIN_PASSWORD=...   # no default password ships with the bundle
+docker compose up -d                # prober + Prometheus + Grafana, pre-provisioned
+```
+
+Grafana serves the comparison dashboard read-only at `http://localhost:3000`
+(loopback-published only). The bundle mounts the same `dashboards/` and
+`prometheus/` files from the repo, so the bundled and published copies cannot drift.
+
 ## Security posture
 
 - Binds `127.0.0.1` by default. Binding a routable interface **refuses to start**
@@ -50,9 +76,9 @@ API keys are read from environment variables only — they have no place in conf
 
 ## Status
 
-Phase 1 (prober + exporter, Anthropic / OpenAI / Gemini). Coming next: prebuilt
-Grafana dashboards + recording/alert rules, a docker-compose standalone bundle, and
-passive OpenTelemetry middleware for real-traffic latency.
+Phase 2 (prober + exporter + Grafana dashboard + recording/alert rules + standalone
+bundle). Coming next: security hardening pass, first PyPI release, and passive
+OpenTelemetry middleware for real-traffic latency.
 
 License: AGPL-3.0-only. Dual licensing available for enterprises — contact the author.
 

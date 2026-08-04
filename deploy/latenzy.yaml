@@ -1,0 +1,30 @@
+# Prober config for the docker-compose bundle. Inside the compose network the
+# exporter must bind 0.0.0.0 so Prometheus can scrape it — which is why the
+# auth token is mandatory here (latenzy refuses to start without it).
+
+providers:
+  - provider: anthropic
+    endpoint: direct
+    models:
+      - claude-sonnet-4-6
+      - claude-haiku-4-5-20251001
+  - provider: openai
+    endpoint: direct
+    models:
+      - gpt-4o
+      - gpt-4o-mini
+  - provider: gemini
+    endpoint: direct
+    models:
+      - gemini-2.0-flash
+
+probe:
+  interval_seconds: 300
+  timeout_seconds: 60
+  max_output_tokens: 16
+  prompt_classes: [small]
+
+exporter:
+  host: 0.0.0.0
+  port: 9877
+  auth_token_env: LATENZY_TOKEN
