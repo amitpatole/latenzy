@@ -11,6 +11,7 @@ from latenzy.config import Config, ConfigError, load_config
 from latenzy.exporter import MetricsServer
 from latenzy.metrics import Metrics
 from latenzy.prober import Prober
+from latenzy.sink import FanoutSink, RecordSink
 
 
 def _fmt(value: float | None, suffix: str = "s") -> str:
@@ -37,13 +38,19 @@ async def _once(config: Config) -> int:
 
 
 async def _run(config: Config) -> int:
+    log = logging.getLogger("latenzy")
     metrics = Metrics()
+    sink: RecordSink = metrics
+    if config.otel.enabled:
+        from latenzy.otel import OTelBridge, build_meter_provider
+
+        provider = build_meter_provider(config.otel.endpoint)
+        sink = FanoutSink(metrics, OTelBridge(provider.get_meter("latenzy")))
+        log.info("OpenTelemetry export enabled (%s)", config.otel.endpoint or "console")
     server = MetricsServer(config.exporter, metrics.registry)
     server.start()
-    logging.getLogger("latenzy").info(
-        "serving /metrics on %s:%d", config.exporter.host, server.port
-    )
-    prober = Prober(config, metrics)
+    log.info("serving /metrics on %s:%d", config.exporter.host, server.port)
+    prober = Prober(config, sink)
     try:
         await prober.run_forever()
     finally:

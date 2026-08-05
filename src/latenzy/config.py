@@ -166,12 +166,31 @@ class ExporterConfig(BaseModel):
         return v
 
 
+class OTelConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    # None with enabled=true → export to the console (local verification).
+    endpoint: str | None = None
+
+    @field_validator("endpoint")
+    @classmethod
+    def _valid_endpoint(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        parsed = urlparse(v)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValueError(f"otel.endpoint must be an http(s) URL with a host, got {v!r}")
+        return v
+
+
 class Config(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     providers: list[ProviderConfig] = Field(min_length=1)
     probe: ProbeConfig = Field(default_factory=ProbeConfig)
     exporter: ExporterConfig = Field(default_factory=ExporterConfig)
+    otel: OTelConfig = Field(default_factory=OTelConfig)
 
 
 def load_config(path: str | Path) -> Config:

@@ -12,9 +12,21 @@ The public API is re-exported from the top-level `latenzy` package.
 
 ::: latenzy.live.measure_stream
 
-## Metrics
+## Metrics & sinks
 
 ::: latenzy.metrics.Metrics
+
+::: latenzy.sink.RecordSink
+
+::: latenzy.sink.FanoutSink
+
+## OpenTelemetry bridge
+
+Requires the `otel` extra (`pip install 'latenzy[otel]'`).
+
+::: latenzy.otel.OTelBridge
+
+::: latenzy.otel.build_meter_provider
 
 ## Configuration models
 

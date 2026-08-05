@@ -45,6 +45,9 @@ follow directly from that and are the operator's responsibility, not defects:
 - **Treat `/metrics` as trusted-network.** Keep it on loopback (default) or behind
   the auth token on a trusted network; it is a monitoring endpoint, not a
   hardened public service.
+- **`otel.endpoint` connects wherever you point it** (like `base_url`): the
+  OpenTelemetry bridge exports to the OTLP collector you configure. It is
+  validated to be an `http(s)` URL; aim it at your own collector.
 
 ## Verification
 

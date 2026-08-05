@@ -10,10 +10,10 @@ import logging
 import httpx
 
 from latenzy.config import Config, PromptClass
-from latenzy.metrics import Metrics
 from latenzy.probe import PROMPTS, ProbeResult
 from latenzy.providers import PROBE_CLASSES
 from latenzy.providers.base import ProviderProbe
+from latenzy.sink import RecordSink
 
 logger = logging.getLogger("latenzy")
 
@@ -22,7 +22,7 @@ class Prober:
     def __init__(
         self,
         config: Config,
-        metrics: Metrics,
+        metrics: RecordSink,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self._config = config

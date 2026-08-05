@@ -39,6 +39,29 @@ refuses to start. Loopback is zero-config; any routable bind requires a token,
 which Prometheus then sends as `Authorization: Bearer <token>`. See
 [Security](security.md).
 
+## `otel` (optional)
+
+Mirror measurements to OpenTelemetry in addition to Prometheus. Requires the
+`otel` extra: `pip install 'latenzy[otel]'`.
+
+| Field | Default | Meaning |
+|---|---|---|
+| `enabled` | `false` | turn the OpenTelemetry bridge on |
+| `endpoint` | none | OTLP/HTTP collector URL (`http(s)`); omit to export to the console |
+
+```yaml
+otel:
+  enabled: true
+  endpoint: https://collector.internal:4318/v1/metrics
+```
+
+When enabled, `latenzy run` fans every measurement out to both Prometheus and
+OpenTelemetry. Instrument names follow the OTel GenAI conventions
+(`gen_ai.client.operation.duration`, `gen_ai.client.token.usage`) plus
+latenzy-namespaced TTFT/throughput. Apps that already run OpenTelemetry can skip
+this and use `latenzy.otel.OTelBridge` with their own meter (see the
+[API reference](api.md)).
+
 ## Endpoints and model snapshots
 
 `endpoint` is a first-class label so you can compare the *same* model over

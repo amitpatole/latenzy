@@ -37,6 +37,25 @@ may come from user input — a host app cannot explode metric cardinality or inj
 control characters. App-supplied `output_tokens` are sanity-bounded, matching the
 prober's hardening.
 
+## OpenTelemetry
+
+`LiveRecorder` (and the prober) take any `RecordSink`. To emit to OpenTelemetry —
+on its own or alongside Prometheus — install the `otel` extra and pass an
+`OTelBridge` (or a `FanoutSink` of both):
+
+```python
+from latenzy import FanoutSink, Metrics, LiveRecorder
+from latenzy.otel import OTelBridge  # needs: pip install 'latenzy[otel]'
+
+recorder = LiveRecorder(FanoutSink(Metrics(), OTelBridge(my_meter)))
+```
+
+Instrument names follow the OpenTelemetry GenAI conventions
+(`gen_ai.client.operation.duration`, `gen_ai.client.token.usage`) with
+`gen_ai.system` / `gen_ai.request.model` attributes, so the series line up with
+an existing OTel GenAI pipeline. For the standalone `latenzy run`, enable it via
+the [`otel` config section](configuration.md#otel-optional) instead.
+
 ## Runnable demo
 
 A key-free, copy-paste walkthrough lives in

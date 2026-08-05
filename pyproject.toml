@@ -22,6 +22,13 @@ dependencies = [
     "PyYAML>=6.0",
 ]
 
+[project.optional-dependencies]
+otel = [
+    "opentelemetry-api>=1.20",
+    "opentelemetry-sdk>=1.20",
+    "opentelemetry-exporter-otlp-proto-http>=1.20",
+]
+
 [project.scripts]
 latenzy = "latenzy.cli:main"
 
@@ -37,6 +44,10 @@ dev = [
     "pytest-asyncio>=0.24",
     "ruff>=0.5",
     "types-PyYAML",
+    # so the OTel bridge and its tests run in the gate
+    "opentelemetry-api>=1.20",
+    "opentelemetry-sdk>=1.20",
+    "opentelemetry-exporter-otlp-proto-http>=1.20",
 ]
 
 [tool.hatch.build.targets.wheel]

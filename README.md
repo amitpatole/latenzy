@@ -76,6 +76,21 @@ latenzy_ttft_seconds_sum{...,prompt_class="large",...,source="live"} 0.3202...
 latenzy_probes_total{...,outcome="ok",prompt_class="small",...,source="live"} 1.0
 ```
 
+### OpenTelemetry
+
+Emit to OpenTelemetry as well as (or instead of) Prometheus with the `otel` extra
+(`pip install 'latenzy[otel]'`). The prober and `LiveRecorder` take any
+`RecordSink`, so `FanoutSink(Metrics(), OTelBridge(meter))` sends to both;
+instrument names follow the OTel GenAI conventions
+(`gen_ai.client.operation.duration`, `gen_ai.client.token.usage`). For
+`latenzy run`, enable it in config:
+
+```yaml
+otel:
+  enabled: true
+  endpoint: https://collector.internal:4318/v1/metrics   # omit → console
+```
+
 ## Quick start
 
 ```bash
@@ -134,8 +149,9 @@ Grafana serves the comparison dashboard read-only at `http://localhost:3000`
 v0.1.0 — first real release: prober + exporter, Grafana dashboard (library ID
 25642), recording/alert rules, standalone bundle, security-hardened through a
 four-round red-team loop (see [`SECURITY.md`](SECURITY.md)). Now also: passive
-live-traffic instrumentation (`LiveRecorder`, `source="live"`). Coming next: a
-direct OpenTelemetry meter bridge and a docs site.
+live-traffic instrumentation (`LiveRecorder`, `source="live"`) and an
+OpenTelemetry meter bridge (`latenzy[otel]`). Docs:
+[amitpatole.github.io/latenzy](https://amitpatole.github.io/latenzy/).
 
 License: AGPL-3.0-only. Dual licensing available for enterprises — contact the author.
 

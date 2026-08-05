@@ -18,9 +18,10 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 from latenzy.config import PromptClass, ensure_metric_label
-from latenzy.metrics import LIVE, Metrics
+from latenzy.metrics import LIVE
 from latenzy.probe import Outcome, ProbeResult
 from latenzy.providers.base import sane_token_count
+from latenzy.sink import RecordSink
 
 # Prompt-size class boundaries in approximate input tokens, so live traffic
 # lands in the same small/medium/large buckets the prober uses.
@@ -86,7 +87,7 @@ class LiveObservation:
 class LiveRecorder:
     """Records real-traffic latency into a shared :class:`Metrics` instance."""
 
-    def __init__(self, metrics: Metrics) -> None:
+    def __init__(self, metrics: RecordSink) -> None:
         self._metrics = metrics
 
     @contextmanager

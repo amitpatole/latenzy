@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- OpenTelemetry meter bridge (`latenzy.otel.OTelBridge`), behind the new `otel`
+  extra (`pip install 'latenzy[otel]'`). A `RecordSink` protocol + `FanoutSink`
+  let the prober and live recorder emit to Prometheus and/or OpenTelemetry
+  through one interface. Instrument names follow the OTel GenAI conventions
+  (`gen_ai.client.operation.duration`, `gen_ai.client.token.usage`) plus
+  latenzy-namespaced TTFT/throughput. Enable for `latenzy run` via a new `otel`
+  config section (`enabled`, `endpoint`). Base wheel stays light — the
+  OpenTelemetry packages are lazy-imported and never pulled in by `import latenzy`.
 - Passive live-traffic instrumentation: `LiveRecorder` / `LiveObservation` /
   `classify_prompt` / `measure_stream` record real application LLM-call latency
   into the same metric names under a new `source="live"` label (prober traffic
