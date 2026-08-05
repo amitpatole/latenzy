@@ -11,7 +11,7 @@ from latenzy.metrics import Metrics
 from latenzy.probe import Outcome, ProbeResult
 from latenzy.sink import FanoutSink, RecordSink
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Config",

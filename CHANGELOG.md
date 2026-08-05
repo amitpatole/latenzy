@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-08-04
 
 - OpenTelemetry meter bridge (`latenzy.otel.OTelBridge`), behind the new `otel`
   extra (`pip install 'latenzy[otel]'`). A `RecordSink` protocol + `FanoutSink`

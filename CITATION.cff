@@ -6,7 +6,7 @@ authors:
   - family-names: Patole
     given-names: Amit
     email: amit.patole@gmail.com
-version: 0.1.0
+version: 0.2.0
 date-released: 2026-08-04
 doi: 10.5281/zenodo.21796983
 repository-code: "https://github.com/amitpatole/latenzy"

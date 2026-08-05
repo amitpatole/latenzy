@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "latenzy"
-version = "0.1.0"
+version = "0.2.0"
 description = "Per-model LLM latency monitoring — Prometheus exporter and Grafana dashboards for Claude, OpenAI, and Gemini."
 readme = "README.md"
 requires-python = ">=3.10"
